@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Affichiste — prompts d’affiches de film</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;800;900&family=Archivo:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#E3E6E0; --sheet:#F2F3EE; --ink:#1E2633; --muted:#5A6372;
+  --riso:#E2445C; --blue:#2F5DA8; --line:#C4C9C1; --chip:#F2F3EE;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#151920; --sheet:#1D222B; --ink:#E7E9E3; --muted:#9AA2AF;
+    --riso:#FF6178; --blue:#6E97E0; --line:#323946; --chip:#1D222B;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#151920; --sheet:#1D222B; --ink:#E7E9E3; --muted:#9AA2AF;
+  --riso:#FF6178; --blue:#6E97E0; --line:#323946; --chip:#1D222B;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:16px; line-height:1.5;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:2rem 1.25rem 4rem}
+
+/* Hero : le seul élément « bruyant » */
+header{margin-bottom:2.5rem}
+h1{
+  font-family:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+  font-weight:900; font-size:clamp(4rem,14vw,9.5rem); line-height:.82;
+  margin:0; letter-spacing:-.01em; color:var(--riso);
+  text-shadow:.045em .03em 0 color-mix(in srgb,var(--blue) 75%,transparent);
+  mix-blend-mode:normal;
+}
+.billing{
+  font-family:"Big Shoulders Display","Arial Narrow",sans-serif;
+  font-weight:500; font-size:1.05rem; line-height:1.25; letter-spacing:.02em;
+  max-width:38rem; margin-top:1rem; color:var(--muted);
+}
+.billing b{color:var(--ink);font-weight:800}
+
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:2.5rem;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+
+fieldset{border:0;margin:0 0 2rem;padding:0}
+legend{
+  font-family:"Big Shoulders Display","Arial Narrow",sans-serif;
+  font-weight:800;font-size:1.6rem;line-height:1;padding:0;margin-bottom:.9rem;
+}
+label.field{display:block;font-weight:600;font-size:.92rem;margin:1rem 0 .4rem}
+.hint{font-size:.85rem;color:var(--muted);margin:.35rem 0 0}
+textarea,select{
+  width:100%;font:inherit;color:var(--ink);background:var(--sheet);
+  border:1.5px solid var(--line);border-radius:3px;padding:.65rem .75rem;
+}
+textarea{min-height:6.5rem;resize:vertical}
+textarea:focus,select:focus{outline:2px solid var(--blue);outline-offset:1px;border-color:var(--blue)}
+
+.chips{display:flex;flex-wrap:wrap;gap:.45rem}
+.chips input{position:absolute;opacity:0;pointer-events:none}
+.chips label{
+  display:inline-block;cursor:pointer;padding:.42rem .75rem;font-size:.9rem;
+  border:1.5px solid var(--line);border-radius:999px;background:var(--chip);
+  transition:background .15s,border-color .15s,color .15s;
+}
+.chips input:checked + label{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.chips input:focus-visible + label{outline:2px solid var(--blue);outline-offset:2px}
+
+/* Épreuve de sortie */
+.proof{
+  position:sticky;top:calc(1rem + env(safe-area-inset-top,0px));
+  background:var(--sheet);border:1.5px solid var(--ink);
+  padding:1.4rem 1.4rem 1.2rem;
+}
+.proof h2{
+  font-family:"Big Shoulders Display","Arial Narrow",sans-serif;
+  font-weight:800;font-size:1.6rem;margin:0 0 .2rem;line-height:1;
+}
+.proof .sub{color:var(--muted);font-size:.88rem;margin:0 0 1rem}
+.out-label{display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:.9rem;margin:1rem 0 .35rem}
+.out{
+  width:100%;min-height:9rem;font-family:ui-monospace,"Cascadia Code",Consolas,monospace;
+  font-size:.86rem;line-height:1.5;background:var(--paper);
+}
+#negative{min-height:4.5rem}
+.copy{
+  font:inherit;font-size:.82rem;font-weight:600;cursor:pointer;
+  background:none;border:1.5px solid var(--ink);color:var(--ink);
+  padding:.2rem .6rem;border-radius:3px;
+}
+.copy:focus-visible,.btn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.actions{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1.2rem}
+.btn{
+  font:inherit;font-weight:600;cursor:pointer;padding:.7rem 1.1rem;border-radius:3px;
+  border:1.5px solid var(--ink);background:var(--ink);color:var(--paper);
+}
+.btn.ai{background:var(--riso);border-color:var(--riso);color:#fff}
+.btn:disabled{opacity:.55;cursor:wait}
+.notes{
+  margin-top:1.2rem;padding-top:1rem;border-top:1.5px dashed var(--line);
+  font-size:.9rem;
+}
+.notes p{margin:.3rem 0}
+.notes strong{font-weight:600}
+.status{font-size:.86rem;color:var(--muted);min-height:1.3em;margin-top:.6rem}
+.status.err{color:var(--riso)}
+.hidden{display:none !important}
+
+.history{margin-top:2rem}
+.history h3{font-family:"Big Shoulders Display","Arial Narrow",sans-serif;font-weight:800;font-size:1.25rem;margin:0 0 .5rem}
+.history ol{margin:0;padding-left:1.2rem;font-size:.85rem;color:var(--muted)}
+.history li{margin:.35rem 0}
+.history button{font:inherit;background:none;border:0;padding:0;color:var(--blue);cursor:pointer;text-align:left;text-decoration:underline;text-underline-offset:2px}
+
+@media (prefers-reduced-motion:reduce){*{transition:none !important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Affichiste</h1>
+    <p class="billing"><b>Un générateur de prompts</b> pour des affiches de film qui ressemblent à de vraies affiches, pas à des images d’IA. Pellicule, lumière, composition et style graphique : tu choisis, il assemble.</p>
+  </header>
+
+  <div class="grid">
+    <form id="form" autocomplete="off" onsubmit="return false">
+      <fieldset>
+        <legend>Le film</legend>
+        <label class="field" for="desc">De quoi parle le film, et que doit montrer l’affiche ?</label>
+        <textarea id="desc" placeholder="Ex. : une ancienne nageuse revient dans son village au bord d’un lac gelé, où son frère a disparu"></textarea>
+        <p class="hint">Le mode instantané garde ta description telle quelle : écris-la en anglais. « Affiner avec Claude » accepte le français et la traduit.</p>
+        <label class="field">Genre</label>
+        <div class="chips" data-group="genre"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Le style graphique</legend>
+        <div class="chips" data-group="style"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>L’image</legend>
+        <label class="field">Composition</label>
+        <div class="chips" data-group="compo"></div>
+        <label class="field">Lumière</label>
+        <div class="chips" data-group="light"></div>
+        <label class="field">Palette</label>
+        <div class="chips" data-group="palette"></div>
+        <div id="stockWrap">
+          <label class="field">Pellicule</label>
+          <div class="chips" data-group="stock"></div>
+          <p class="hint">Utilisée seulement pour les styles photographiques.</p>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>La sortie</legend>
+        <label class="field">Outil de génération</label>
+        <div class="chips" data-group="tool"></div>
+        <label class="field">Espace réservé au titre</label>
+        <div class="chips" data-group="space"></div>
+      </fieldset>
+    </form>
+
+    <aside>
+      <div class="proof" aria-live="polite">
+        <h2>Ton prompt</h2>
+        <p class="sub" id="toolNote"></p>
+
+        <div class="out-label"><span>Prompt</span><button class="copy" data-target="prompt">Copier</button></div>
+        <textarea id="prompt" class="out" readonly></textarea>
+
+        <div id="negWrap">
+          <div class="out-label"><span>Prompt négatif</span><button class="copy" data-target="negative">Copier</button></div>
+          <textarea id="negative" class="out" readonly></textarea>
+        </div>
+
+        <div class="actions">
+          <button class="btn ai hidden" id="aiBtn" type="button">Affiner avec Claude</button>
+          <button class="btn" id="saveBtn" type="button">Garder dans l’historique</button>
+        </div>
+        <p class="status" id="status"></p>
+
+        <div class="notes" id="notes"></div>
+      </div>
+
+      <div class="history hidden" id="historyWrap">
+        <h3>Historique</h3>
+        <ol id="history"></ol>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+const DATA = {
+  genre:[
+    ["thriller","Thriller","thriller"],["drama","Drame","drama"],["horror","Horreur","horror"],
+    ["scifi","Science-fiction","science fiction"],["comedy","Comédie","comedy"],
+    ["romance","Romance","romance"],["western","Western","western"],["action","Action","action"]
+  ],
+  style:[
+    ["thriller70","Thriller photo années 70","1970s thriller movie poster photograph, muted analog colors",true],
+    ["painted80","Affiche peinte années 80","hand-painted 1980s movie poster illustration, gouache and airbrush, visible brush strokes, slightly faded print colors",false],
+    ["minimal60","Minimalisme années 60","1960s minimalist graphic movie poster, flat cut-paper shapes, strong negative space",false],
+    ["swiss","Style suisse","Swiss International Style film poster, grid-based layout, black and white photographic cutout on a flat colored background",true],
+    ["screen","Sérigraphie","screen-printed film poster, limited ink layers, slight misregistration, visible paper texture",false],
+    ["noir","Film noir","black and white film noir photograph, 1940s, deep shadows",true],
+    ["indie","Cinéma indé actuel","contemporary independent film poster photograph, understated, documentary feel",true]
+  ],
+  compo:[
+    ["small","Silhouette dans un grand espace","a single small figure in a vast empty space, lots of negative space"],
+    ["back","Vu de dos","the main character seen from behind"],
+    ["face","Gros plan visage","tight close-up portrait, face partially in shadow"],
+    ["object","Objet symbolique","a single symbolic object as the centerpiece, no people"],
+    ["offcenter","Sujet décentré","subject placed off-center following the rule of thirds"],
+    ["group","Groupe en pyramide","ensemble cast arranged in a loose pyramid, classic poster layout"]
+  ],
+  light:[
+    ["dusk","Crépuscule","fading dusk light"],["overcast","Ciel couvert","soft overcast daylight"],
+    ["back","Contre-jour","backlit, rim light, hazy atmosphere"],["practical","Lampe dans le décor","lit only by a practical lamp inside the scene"],
+    ["neon","Néons","wet street lit by neon signs"],["hard","Soleil dur de midi","harsh midday sun, hard shadows"]
+  ],
+  palette:[
+    ["auto","Laisser faire",""],["earth","Tons terreux","muted earth-tone palette"],
+    ["redcream","Rouge passé et crème","limited palette of faded red and cream"],
+    ["blue","Monochrome bleu","monochrome cold blue palette"],["bw","Noir et blanc","black and white"],
+    ["pastel","Pastels délavés","washed-out pastel palette"]
+  ],
+  stock:[
+    ["portra","Kodak Portra 400","shot on 35mm film, Kodak Portra 400"],
+    ["trix","Kodak Tri-X (N&B)","shot on Kodak Tri-X 400 black and white film"],
+    ["cinestill","CineStill 800T","shot on CineStill 800T, halation around lights"],
+    ["ekta","Ektachrome","shot on Ektachrome slide film"],
+    ["medium","Moyen format","shot on medium format film, 80mm lens"]
+  ],
+  tool:[
+    ["mj","Midjourney"],["flux","Flux"],["sd","Stable Diffusion"],["chat","ChatGPT / Gemini"]
+  ],
+  space:[
+    ["top","En haut","large empty area at the top of the frame reserved for the title"],
+    ["bottom","En bas","large empty area at the bottom of the frame reserved for the title"],
+    ["none","Aucun",""]
+  ]
+};
+const DEFAULTS = {genre:"thriller",style:"thriller70",compo:"small",light:"dusk",palette:"auto",stock:"portra",tool:"mj",space:"top"};
+
+const FONTS = {
+  thriller70:"Titre en Jost ou Futura, capitales très espacées.",
+  painted80:"Titre en Anton ou Bebas Neue, avec un léger biseau ou contour.",
+  minimal60:"Titre en Jost (équivalent libre de Futura), petit et précis.",
+  swiss:"Titre en Inter ou Archivo, aligné à gauche, gros et serré.",
+  screen:"Titre en Alfa Slab One ou Oswald, une seule couleur d’encre.",
+  noir:"Titre en Bodoni Moda ou Playfair Display, italique possible.",
+  indie:"Titre en Inter Tight, petit et discret : l’image fait le travail."
+};
+
+const AVOID_BASE = ["text","letters","typography","watermark","logo","HDR","oversaturated colors","glossy","plastic skin","3d render","CGI","digital art look","ultra detailed","perfectly symmetrical composition"];
+
+/* --- rendu des chips --- */
+document.querySelectorAll(".chips").forEach(box=>{
+  const g = box.dataset.group;
+  DATA[g].forEach(([id,label])=>{
+    const inp = document.createElement("input");
+    inp.type="radio"; inp.name=g; inp.id=g+"-"+id; inp.value=id;
+    if(DEFAULTS[g]===id) inp.checked=true;
+    const lab = document.createElement("label");
+    lab.htmlFor=inp.id; lab.textContent=label;
+    box.append(inp,lab);
+  });
+});
+
+const $ = s=>document.querySelector(s);
+const val = g=>(document.querySelector(`input[name="${g}"]:checked`)||{}).value;
+const find = (g,id)=>DATA[g].find(x=>x[0]===id);
+
+function state(){
+  return {
+    desc:$("#desc").value.trim(),
+    genre:val("genre"),style:val("style"),compo:val("compo"),light:val("light"),
+    palette:val("palette"),stock:val("stock"),tool:val("tool"),space:val("space")
+  };
+}
+
+function build(s){
+  const style = find("style",s.style);
+  const photo = style[3];
+  const parts = [];
+  parts.push(`${style[2]}, ${find("genre",s.genre)[2]} film`);
+  if(s.desc) parts.push(s.desc.replace(/\s+/g," ").replace(/[.]+$/,""));
+  parts.push(find("compo",s.compo)[2]);
+  parts.push(find("light",s.light)[2]);
+  let pal = find("palette",s.palette)[2];
+  if(s.style==="noir" && !pal) pal = "black and white";
+  if(pal) parts.push(pal);
+  if(photo){
+    let stock = find("stock",s.stock)[2];
+    if(s.style==="noir" && s.stock!=="trix") stock = "shot on Kodak Tri-X 400 black and white film";
+    parts.push(stock);
+    parts.push("natural film grain, slight softness, realistic skin texture with visible pores, subtle imperfections");
+  } else {
+    parts.push("hand-made texture, uneven ink and paint, slightly worn printed paper");
+  }
+  const sp = find("space",s.space)[2];
+  if(sp) parts.push(sp);
+
+  const avoid = AVOID_BASE.slice();
+  if(!photo) avoid.push("photorealistic");
+  const core = parts.join(", ");
+  let prompt="", negative="", note="";
+
+  switch(s.tool){
+    case "mj":
+      prompt = `${core} --ar 2:3 --style raw --stylize ${photo?50:120} --no ${avoid.join(", ")}`;
+      note = "Le paramètre --no est déjà inclus : pas besoin du champ négatif.";
+      break;
+    case "flux":
+      prompt = `${cap(core)}. Vertical 2:3 poster format. No text or lettering anywhere in the image. Natural, understated look rather than polished or glossy.`;
+      note = "Flux ignore la plupart des prompts négatifs : les choses à éviter sont formulées dans le prompt.";
+      break;
+    case "sd":
+      prompt = core;
+      negative = avoid.join(", ") + ", oversharpened, smooth skin, airbrushed face, bokeh overload";
+      note = "Mets le négatif dans son champ dédié. Format conseillé : 832 × 1216 (SDXL).";
+      break;
+    case "chat":
+      prompt = `Create a vertical movie poster image (2:3 ratio). ${cap(core)}. Do not add any text, title or lettering: I will add the typography myself. Avoid the typical AI look: no glossy finish, no HDR, no overly smooth skin, no perfectly centered symmetrical composition.`;
+      note = "Formulé en phrases complètes, ce que ces outils comprennent le mieux.";
+      break;
+  }
+  return {prompt,negative,note,photo};
+}
+const cap = t=>t.charAt(0).toUpperCase()+t.slice(1);
+
+function renderNotes(s, extra){
+  const html = [];
+  if(extra) html.push(`<p><strong>Concept :</strong> ${esc(extra)}</p>`);
+  html.push(`<p><strong>Typo :</strong> ${FONTS[s.style]} Bloc de crédits en Oswald Light condensé.</p>`);
+  html.push(`<p><strong>Après génération :</strong> grain par-dessus tout (image et texte), légère désaturation, correction des mains et des yeux en inpainting.</p>`);
+  $("#notes").innerHTML = html.join("");
+}
+const esc = t=>t.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+let last = null;
+function update(){
+  const s = state();
+  const r = build(s);
+  $("#prompt").value = r.prompt;
+  $("#negative").value = r.negative;
+  $("#negWrap").classList.toggle("hidden", s.tool!=="sd");
+  $("#stockWrap").classList.toggle("hidden", !r.photo);
+  $("#toolNote").textContent = r.note;
+  renderNotes(s);
+  last = {s,r};
+  setStatus("");
+}
+document.getElementById("form").addEventListener("input",update);
+document.getElementById("form").addEventListener("change",update);
+
+function setStatus(t,err){const el=$("#status");el.textContent=t;el.classList.toggle("err",!!err)}
+
+/* --- copie --- */
+document.querySelectorAll(".copy").forEach(b=>b.addEventListener("click",async()=>{
+  const ta = document.getElementById(b.dataset.target);
+  try{ await navigator.clipboard.writeText(ta.value); }
+  catch{ ta.select(); try{document.execCommand("copy")}catch{} }
+  const old=b.textContent; b.textContent="Copié"; setTimeout(()=>b.textContent=old,1400);
+}));
+
+/* --- historique (local à ce navigateur) --- */
+const HKEY="affichiste-history";
+function loadHist(){try{return JSON.parse(localStorage.getItem(HKEY)||"[]")}catch{return []}}
+function saveHist(h){try{localStorage.setItem(HKEY,JSON.stringify(h))}catch{}}
+function renderHist(){
+  const h=loadHist(); const ol=$("#history"); ol.innerHTML="";
+  $("#historyWrap").classList.toggle("hidden",!h.length);
+  h.forEach(item=>{
+    const li=document.createElement("li"); const btn=document.createElement("button");
+    btn.textContent=item.prompt.slice(0,90)+(item.prompt.length>90?"…":"");
+    btn.addEventListener("click",()=>{$("#prompt").value=item.prompt;$("#negative").value=item.negative||"";$("#negWrap").classList.toggle("hidden",!item.negative);setStatus("Prompt rechargé depuis l’historique.")});
+    li.append(btn); ol.append(li);
+  });
+}
+$("#saveBtn").addEventListener("click",()=>{
+  const p=$("#prompt").value; if(!p) return;
+  const h=loadHist().filter(x=>x.prompt!==p);
+  h.unshift({prompt:p,negative:$("#negative").value}); saveHist(h.slice(0,8)); renderHist();
+  setStatus("Gardé dans l’historique.");
+});
+
+/* --- affinage par Claude (si disponible) --- */
+let sample=null, busy=false;
+(async()=>{
+  try{ if(window.claude && claude.use){ sample = await claude.use("sample"); } }catch{ sample=null }
+  if(sample) $("#aiBtn").classList.remove("hidden");
+})();
+
+const TOOL_RULES = {
+  mj:"Midjourney: one line of comma-separated descriptive phrases, ending with parameters: --ar 2:3 --style raw --stylize 50 (use 120 for illustrated styles) and a --no list of things to avoid. negative must be an empty string.",
+  flux:"Flux: two to four natural English sentences. Flux ignores negative prompts, so phrase what to avoid inside the prompt (no text, no glossy look). negative must be an empty string.",
+  sd:"Stable Diffusion XL: comma-separated phrases in the prompt; put things to avoid in negative.",
+  chat:"ChatGPT or Gemini image generation: a short paragraph of full English sentences asking for a vertical 2:3 poster image, explicitly saying not to add any text. negative must be an empty string."
+};
+
+$("#aiBtn").addEventListener("click",async()=>{
+  if(!sample||busy) return;
+  const s=state();
+  if(!s.desc){ setStatus("Décris d’abord le film : c’est ce que Claude va traduire et mettre en scène.",true); $("#desc").focus(); return; }
+  busy=true; $("#aiBtn").disabled=true; setStatus("Claude réfléchit à l’affiche…");
+  const r=build(s);
+  const input = `You write image-generation prompts for movie posters that must NOT look AI-generated.
+Film description (may be in French, translate it): """${s.desc}"""
+Choices made by the user (keep them all):
+- genre: ${find("genre",s.genre)[1]}
+- graphic style: ${find("style",s.style)[2]}
+- composition: ${find("compo",s.compo)[2]}
+- lighting: ${find("light",s.light)[2]}
+- palette: ${find("palette",s.palette)[2]||"choose a limited palette that fits"}
+- film stock: ${r.photo?find("stock",s.stock)[2]:"not applicable (illustrated style)"}
+- title space: ${find("space",s.space)[2]||"none"}
+Target tool format: ${TOOL_RULES[s.tool]}
+
+Rules: invent ONE strong visual idea for the poster (a concrete image, not generic). Be specific about physical, real-world details: place, clothing, weather, materials. Ask for natural imperfections (grain, softness, real skin texture, or hand-made texture for illustrated styles). Never use words like masterpiece, epic, ultra detailed, 8k, hyperrealistic, cinematic lighting. Never ask for any text in the image.
+
+Reply with JSON only: {"concept_fr": "one or two French sentences describing the visual idea", "prompt": "the prompt in English", "negative": "negative prompt or empty string"}`;
+  try{
+    const out = await sample.json(input,{modelTier:"default"});
+    if(!out||!out.prompt) throw {message:"réponse vide"};
+    $("#prompt").value=out.prompt;
+    $("#negative").value=out.negative||"";
+    $("#negWrap").classList.toggle("hidden",!out.negative);
+    renderNotes(s,out.concept_fr||"");
+    setStatus("Prompt affiné. Change une option pour revenir au mode instantané.");
+  }catch(e){
+    if(e&&e.code==="not_granted"){ $("#aiBtn").classList.add("hidden"); setStatus("Accès à Claude refusé : le mode instantané reste disponible.",true); }
+    else if(e&&e.code==="rate_limited"){ setStatus("Trop de demandes d’un coup. Réessaie dans une minute.",true); }
+    else { setStatus("L’affinage n’a pas abouti. Le prompt instantané est toujours là.",true); }
+  }finally{ busy=false; $("#aiBtn").disabled=false; }
+});
+
+update(); renderHist();
+</script>
+</body>
+</html>
